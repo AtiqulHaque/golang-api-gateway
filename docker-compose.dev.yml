@@ -1,0 +1,59 @@
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage for development
+    container_name: api-gateway-dev
+    ports:
+      - "8080:8080"
+    environment:
+      - JWT_SECRET=dev-secret-key
+      - JWT_ISSUER=api-gateway-dev
+      - JWT_AUDIENCE=api-users
+      - JWT_EXPIRY_HOURS=24
+      - PORT=8080
+      - CGO_ENABLED=0
+      - GOOS=linux
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      # Exclude node_modules and other build artifacts
+      - /app/api-gateway
+      - /app/.git
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Starting development server with file watching...' &&
+        echo 'Installing air for hot reload...' &&
+        go install github.com/cosmtrek/air@latest &&
+        echo 'Starting air...' &&
+        air -c .air.toml
+      "
+    restart: unless-stopped
+    networks:
+      - api-network
+    depends_on:
+      - watcher
+
+  # File watcher service for development
+  watcher:
+    image: alpine:latest
+    container_name: api-gateway-watcher
+    volumes:
+      - .:/watch
+    command: >
+      sh -c "
+        apk add --no-cache inotify-tools &&
+        echo 'Watching for file changes...' &&
+        while inotifywait -r -e modify,create,delete /watch --exclude '(/watch/api-gateway|/watch/.git|/watch/node_modules)' ; do
+          echo 'File change detected, triggering rebuild...'
+          touch /watch/.rebuild
+        done
+      "
+    networks:
+      - api-network
+
+networks:
+  api-network:
+    driver: bridge

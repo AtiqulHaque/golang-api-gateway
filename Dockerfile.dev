@@ -1,0 +1,29 @@
+# Development Dockerfile with hot reload support
+FROM golang:1.21-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install development tools
+RUN apk add --no-cache git ca-certificates inotify-tools
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Create tmp directory for air
+RUN mkdir -p tmp
+
+# Fix permissions for go binary
+RUN chmod +x /usr/local/go/bin/go
+
+# Expose port
+EXPOSE 8080
+
+# Set PATH to include Go binaries
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Default command (will be overridden by docker-compose)
+CMD ["/usr/local/go/bin/go", "run", "main.go"]
