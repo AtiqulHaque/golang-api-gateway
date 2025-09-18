@@ -187,3 +187,8 @@ charts/*.tgz
 jwt-secret.txt
 private-key.pem
 public-key.pem
+
+# Test files
+test/
+test-results/
+test-reports/
