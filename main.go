@@ -35,7 +35,6 @@ func main() {
 	// Initialize rate limiting
 	rateLimitConfig := config.LoadRateLimitConfig()
 	var rateLimitMiddleware *ratelimit.RateLimitMiddleware
-	fmt.Println("Rate limit config: %v", rateLimitConfig)
 	if rateLimitConfig.Enabled {
 		// Convert config to middleware config
 		identifier := ratelimit.ClientByIP
@@ -67,14 +66,12 @@ func main() {
 			SkipFailed:     rateLimitConfig.SkipFailed,
 		}
 
-		fmt.Println("Middleware config: %v", middlewareConfig)
 		var err error
 		rateLimitMiddleware, err = ratelimit.NewRateLimitMiddleware(middlewareConfig)
 		if err != nil {
 			log.Fatalf("Failed to initialize rate limiting: %v", err)
 		}
 	}
-	fmt.Println("PioooRate limit middleware:..%v", rateLimitMiddleware)
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(jwtManager)
 	protectedHandler := handlers.NewProtectedHandler()
@@ -85,7 +82,6 @@ func main() {
 		rateLimitHandler = handlers.NewRateLimitHandler(rateLimitMiddleware)
 	}
 
-	fmt.Println("Again ..PioooRate limit middleware:..%v", rateLimitMiddleware)
 	// Setup routes
 	router := mux.NewRouter()
 
@@ -183,7 +179,6 @@ func main() {
 
 	// Apply rate limiting middleware if enabled
 	if rateLimitMiddleware != nil {
-		fmt.Println("Rate Limit Middleware enabled")
 		router.Use(rateLimitMiddleware.Middleware())
 	}
 
