@@ -1,0 +1,467 @@
+definitions:
+  auth.APIKey:
+    properties:
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      is_active:
+        type: boolean
+      key:
+        type: string
+      last_used_at:
+        type: string
+      name:
+        type: string
+      rate_limit:
+        description: requests per minute
+        type: integer
+      roles:
+        items:
+          type: string
+        type: array
+      user_id:
+        type: string
+    type: object
+  handlers.APIKeyStatsResponse:
+    properties:
+      stats:
+        additionalProperties: true
+        type: object
+    type: object
+  handlers.CreateAPIKeyRequest:
+    properties:
+      expires_in:
+        example: 24h
+        type: string
+      name:
+        example: My API Key
+        type: string
+      rate_limit:
+        example: 100
+        type: integer
+      roles:
+        example:
+        - user
+        - admin
+        items:
+          type: string
+        type: array
+      user_id:
+        example: user123
+        type: string
+    type: object
+  handlers.CreateAPIKeyResponse:
+    properties:
+      api_key:
+        $ref: '#/definitions/auth.APIKey'
+      created_at:
+        type: string
+      message:
+        example: API key created successfully
+        type: string
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      details:
+        example: Invalid token
+        type: string
+      error:
+        example: Authentication required
+        type: string
+    type: object
+  handlers.ListAPIKeysResponse:
+    properties:
+      api_keys:
+        items:
+          $ref: '#/definitions/auth.APIKey'
+        type: array
+      count:
+        type: integer
+    type: object
+  handlers.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  handlers.LoginResponse:
+    properties:
+      expires_at:
+        type: string
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/handlers.UserInfo'
+    type: object
+  handlers.ProtectedResponse:
+    properties:
+      message:
+        example: This is a protected endpoint
+        type: string
+      roles:
+        example:
+        - admin
+        - user
+        items:
+          type: string
+        type: array
+      user:
+        example: admin
+        type: string
+    type: object
+  handlers.UserInfo:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/admin:
+    get:
+      description: Access admin-only endpoint (requires admin role)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Access granted
+          schema:
+            $ref: '#/definitions/handlers.ProtectedResponse'
+        "401":
+          description: Authentication required
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Insufficient permissions
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Admin endpoint
+      tags:
+      - Admin
+  /api/keys:
+    get:
+      description: List all API keys for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ListAPIKeysResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List API Keys
+      tags:
+      - API Keys
+    post:
+      consumes:
+      - application/json
+      description: Create a new API key with specified roles and rate limits
+      parameters:
+      - description: API Key creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateAPIKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.CreateAPIKeyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create API Key
+      tags:
+      - API Keys
+  /api/keys/{key}:
+    delete:
+      description: Permanently delete an API key
+      parameters:
+      - description: API Key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete API Key
+      tags:
+      - API Keys
+    get:
+      description: Get details of a specific API key
+      parameters:
+      - description: API Key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.APIKey'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get API Key
+      tags:
+      - API Keys
+  /api/keys/{key}/revoke:
+    post:
+      description: Revoke (deactivate) an API key
+      parameters:
+      - description: API Key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke API Key
+      tags:
+      - API Keys
+  /api/keys/stats:
+    get:
+      description: Get statistics about API key usage
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.APIKeyStatsResponse'
+      security:
+      - BearerAuth: []
+      summary: Get API Key Statistics
+      tags:
+      - API Keys
+  /api/keys/test:
+    get:
+      description: Test if an API key is valid and get its details
+      parameters:
+      - description: API Key
+        in: header
+        name: X-API-Key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.APIKey'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Test API Key
+      tags:
+      - API Keys
+  /api/mixed:
+    get:
+      description: Access endpoint requiring admin or moderator role
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Access granted
+          schema:
+            $ref: '#/definitions/handlers.ProtectedResponse'
+        "401":
+          description: Authentication required
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Insufficient permissions
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Mixed roles endpoint
+      tags:
+      - Mixed
+  /api/moderator:
+    get:
+      description: Access moderator-only endpoint (requires moderator role)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Access granted
+          schema:
+            $ref: '#/definitions/handlers.ProtectedResponse'
+        "401":
+          description: Authentication required
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Insufficient permissions
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Moderator endpoint
+      tags:
+      - Moderator
+  /api/profile:
+    get:
+      description: Get current user profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          schema:
+            $ref: '#/definitions/handlers.UserInfo'
+        "401":
+          description: Authentication required
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - User
+  /api/refresh:
+    post:
+      description: Refresh JWT token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            $ref: '#/definitions/handlers.LoginResponse'
+        "401":
+          description: Authentication required
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Refresh token
+      tags:
+      - Authentication
+  /api/user:
+    get:
+      description: Access user-level endpoint (requires authentication)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Access granted
+          schema:
+            $ref: '#/definitions/handlers.ProtectedResponse'
+        "401":
+          description: Authentication required
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: User endpoint
+      tags:
+      - User
+  /health:
+    get:
+      description: Health check endpoint to verify service status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is healthy
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - Health
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: '#/definitions/handlers.LoginResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: User login
+      tags:
+      - Authentication
+swagger: "2.0"

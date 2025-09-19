@@ -39,16 +39,16 @@ func NewProtectedHandler() *ProtectedHandler {
 // @Failure 403 {object} ErrorResponse "Insufficient permissions"
 // @Router /api/admin [get]
 func (h *ProtectedHandler) AdminOnly(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetClaimsFromContext(r.Context())
-	if !ok {
+	userCtx := auth.GetUserFromContext(r)
+	if userCtx == nil {
 		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	response := map[string]interface{}{
 		"message": "This is an admin-only endpoint",
-		"user":    claims.Username,
-		"roles":   claims.Roles,
+		"user":    userCtx.Username,
+		"roles":   userCtx.Roles,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -66,16 +66,16 @@ func (h *ProtectedHandler) AdminOnly(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 {object} ErrorResponse "Insufficient permissions"
 // @Router /api/moderator [get]
 func (h *ProtectedHandler) ModeratorOnly(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetClaimsFromContext(r.Context())
-	if !ok {
+	userCtx := auth.GetUserFromContext(r)
+	if userCtx == nil {
 		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	response := map[string]interface{}{
 		"message": "This is a moderator-only endpoint",
-		"user":    claims.Username,
-		"roles":   claims.Roles,
+		"user":    userCtx.Username,
+		"roles":   userCtx.Roles,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -92,16 +92,16 @@ func (h *ProtectedHandler) ModeratorOnly(w http.ResponseWriter, r *http.Request)
 // @Failure 401 {object} ErrorResponse "Authentication required"
 // @Router /api/user [get]
 func (h *ProtectedHandler) UserOnly(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetClaimsFromContext(r.Context())
-	if !ok {
+	userCtx := auth.GetUserFromContext(r)
+	if userCtx == nil {
 		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	response := map[string]interface{}{
 		"message": "This is a user-only endpoint",
-		"user":    claims.Username,
-		"roles":   claims.Roles,
+		"user":    userCtx.Username,
+		"roles":   userCtx.Roles,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -119,16 +119,16 @@ func (h *ProtectedHandler) UserOnly(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 {object} ErrorResponse "Insufficient permissions"
 // @Router /api/mixed [get]
 func (h *ProtectedHandler) MixedRoles(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetClaimsFromContext(r.Context())
-	if !ok {
+	userCtx := auth.GetUserFromContext(r)
+	if userCtx == nil {
 		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	response := map[string]interface{}{
 		"message": "This endpoint requires admin or moderator role",
-		"user":    claims.Username,
-		"roles":   claims.Roles,
+		"user":    userCtx.Username,
+		"roles":   userCtx.Roles,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

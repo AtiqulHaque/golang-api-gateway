@@ -185,6 +185,16 @@ test-swagger: ## Test Swagger UI authentication
 	@chmod +x test_swagger_auth.sh
 	@./test_swagger_auth.sh
 
+test-apikey: ## Test API Key authentication
+	@echo "$(BLUE)Testing API Key authentication...$(NC)"
+	@chmod +x test_apikey.sh
+	@./test_apikey.sh
+
+test-ratelimit: ## Test Rate Limiting and Throttling
+	@echo "$(BLUE)Testing Rate Limiting and Throttling...$(NC)"
+	@chmod +x test_ratelimit.sh
+	@./test_ratelimit.sh
+
 # Install dependencies
 deps: ## Install Go dependencies
 	@echo "$(BLUE)Installing dependencies...$(NC)"

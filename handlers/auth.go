@@ -139,17 +139,17 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} ErrorResponse "Authentication required"
 // @Router /api/profile [get]
 func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetClaimsFromContext(r.Context())
-	if !ok {
+	userCtx := auth.GetUserFromContext(r)
+	if userCtx == nil {
 		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	userInfo := UserInfo{
-		ID:       claims.UserID,
-		Username: claims.Username,
-		Email:    claims.Email,
-		Roles:    claims.Roles,
+		ID:       userCtx.UserID,
+		Username: userCtx.Username,
+		Email:    userCtx.Email,
+		Roles:    userCtx.Roles,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -166,14 +166,14 @@ func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} ErrorResponse "Authentication required"
 // @Router /api/refresh [post]
 func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetClaimsFromContext(r.Context())
-	if !ok {
+	userCtx := auth.GetUserFromContext(r)
+	if userCtx == nil {
 		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	// Generate new token with same claims
-	token, err := h.jwtManager.GenerateToken(claims.UserID, claims.Username, claims.Email, claims.Roles)
+	token, err := h.jwtManager.GenerateToken(userCtx.UserID, userCtx.Username, userCtx.Email, userCtx.Roles)
 	if err != nil {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
@@ -185,10 +185,10 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		Token:     token,
 		ExpiresAt: expiresAt,
 		User: UserInfo{
-			ID:       claims.UserID,
-			Username: claims.Username,
-			Email:    claims.Email,
-			Roles:    claims.Roles,
+			ID:       userCtx.UserID,
+			Username: userCtx.Username,
+			Email:    userCtx.Email,
+			Roles:    userCtx.Roles,
 		},
 	}
 
